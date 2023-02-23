@@ -86,11 +86,43 @@ ORDER BY total_reviews DESC
 
 --That expanded the Android categories to 67 variations on the Apple 13.  Is that even helpful?
 
-SELECT DISTINCT primary_genre, review_count
+SELECT DISTINCT primary_genre AS genre, SUM(CAST(review_count AS bigint)) AS review_sum, AVG(CAST(rating AS bigint)) AS avg_rating  
 FROM app_store_apps
-UNION 
-SELECT DISTINCT genres, review_count
+GROUP BY genre
+UNION ALL
+SELECT  
+CASE 
+	WHEN genres LIKE '%Shopping%' THEN 'Shopping'
+	WHEN genres LIKE '%Game%' THEN 'Game'
+	WHEN genres LIKE '%Education%' THEN 'Education'
+	WHEN genres LIKE '%Reference%' THEN 'Reference'
+	WHEN genres LIKE '%Business%' THEN 'Business'
+	WHEN genres LIKE '%Social Networking%' THEN 'Social Networking'
+	WHEN genres LIKE '%Food & Drink%' THEN 'Food & Drink'
+	WHEN genres LIKE '%Sports%' THEN 'Sports'
+	WHEN genres LIKE '%Catalogs%' THEN 'Catalogs'
+	WHEN genres LIKE '%Weather%' THEN 'Weather'
+	WHEN genres LIKE '%Book%' THEN 'Books'
+	WHEN genres LIKE '%Music%' THEN 'Music'
+	WHEN genres LIKE '%Entertainment%' THEN 'Entertainment'
+	WHEN genres LIKE '%Medical%' THEN 'Medical'
+	WHEN genres LIKE '%Utilities%' THEN 'Utilities'
+	WHEN genres LIKE '%Travel%' THEN 'Travel'
+	WHEN genres LIKE '%Navigation%' THEN 'Navigation'
+	WHEN genres LIKE '%Photo%' THEN 'Photo & Video'
+	WHEN genres LIKE '%Video%' THEN 'Photo & Video'
+	WHEN genres LIKE '%Finance%' THEN 'Finance'
+	WHEN genres LIKE '%Health%' THEN 'Health'
+	WHEN genres LIKE '%Fitness%' THEN 'Fitness'
+	WHEN genres LIKE '%News%' THEN 'News'
+	WHEN genres LIKE '%Productivity%' THEN 'Productivity'
+	WHEN genres LIKE '%Lifestyle%' THEN 'Lifestyle' 
+	END AS genre,
+SUM(CAST(review_count AS bigint)) AS review_sum, AVG(CAST(rating AS bigint)) AS avg_rating
 FROM play_store_apps
+GROUP BY genre
+ORDER BY review_sum DESC, avg_rating DESC
 
--- Need to convert review counts to integers in order to UNION.  Apple is text, Android is integer
-
+/*Not sure if this last column even makes sense?
+SUM(CAST(review_count AS bigint))/AVG(CAST(rating AS bigint)) AS avg_reviews_per_rating
+SUM(CAST(review_count AS bigint))/AVG(CAST(rating AS bigint)) AS avg_reviews_per_rating*/
