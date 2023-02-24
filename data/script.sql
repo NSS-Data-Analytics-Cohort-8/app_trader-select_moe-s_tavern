@@ -60,6 +60,20 @@ FROM app_store_apps
 SELECT *
 FROM play_store_apps
 
+SELECT DISTINCT name, 'Apple', CAST(price AS numeric), 
+CASE
+	WHEN price BETWEEN 0 AND 1 THEN '10000'
+	ELSE (price * 10000) END AS price_per_app
+FROM app_store_apps
+UNION
+SELECT DISTINCT name, 'Android',
+CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
+CASE
+	WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+	ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app 
+	FROM play_store_apps
+ORDER BY price_per_app DESC, name
+
 SELECT DISTINCT content_rating
 FROM app_store_apps
 UNION ALL
