@@ -105,7 +105,31 @@ CASE
 	ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app 
 	FROM play_store_apps
 ORDER BY price_per_app DESC, name) AS subquery
-
+-------------------------------------------------------------------------------------------------
+SELECT name, price, price_per_app,
+	(SELECT ROUND(AVG(app_store_apps.rating),1) AS avg_rating
+	 FROM app_store_apps
+	LEFT JOIN play_store_apps
+	ON app_store_apps.rating=play_store_apps.rating), (SELECT ROUND(AVG(play_store_apps.rating,1) AS avg_ratingS
+	 FROM app_store_apps
+	LEFT JOIN play_store_apps
+	ON app_store_apps.rating=play_store_apps.rating)
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric) AS price, 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app
+	FROM app_store_apps
+	 	INTERSECT
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
+	 	FROM play_store_apps
+	 	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app
+ORDER BY price_per_app ASC
 
 
 
