@@ -59,19 +59,42 @@ ORDER BY price ASC ;
 -- b. Develop a Top 10 List of the apps that App Trader should buy.
 
 
+--Assumption A-C
+SELECT name, price, price_per_app
+FROM (SELECT DISTINCT name, CAST(price AS numeric), 
+CASE
+	WHEN price BETWEEN 0 AND 1 THEN '10000'
+	ELSE (price * 10000) END AS price_per_app,primary_genre
+FROM app_store
+INTERSECT
+SELECT DISTINCT name, 
+CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
+CASE
+	WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+	ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app,genres
+	FROM play_store
+ORDER BY price_per_app DESC, name) AS subquery
 
--- updated 2/18/2023
--- SELECT name, price, price_per_app
--- FROM (SELECT DISTINCT name, CAST(price AS numeric), 
--- CASE
--- 	WHEN price BETWEEN 0 AND 1 THEN '10000'
--- 	ELSE (price * 10000) END AS price_per_app
--- FROM app_store
--- INTERSECT
--- SELECT DISTINCT name, 
--- CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
--- CASE
--- 	WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
--- 	ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app 
--- 	FROM play_store
--- ORDER BY price_per_app DESC, name) AS subquery
+--
+SELECT name, price, price_per_app,
+	(SELECT AVG(app_store.rating + play_store.rating) AS avg_rating
+	 FROM app_store
+	FULL JOIN play_store
+	ON app_store.rating=play_store.rating)
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric) AS price, 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app
+	FROM app_store
+	 	INTERSECT
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
+	 	FROM play_store
+	 	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app, avg_rating
+ORDER BY price_per_app ASC
+--
