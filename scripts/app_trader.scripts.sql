@@ -28,31 +28,152 @@
 
 -- b. Develop a Top 10 List of the apps that App Trader should buy.
 
-SELECT * 
-FROM app_store_apps
-LIMIT 3
-
-SELECT * 
-FROM play_store_apps
-LIMIT 3
 
 SELECT DISTINCT(primary_genre)
 FROM app_store_apps
 
+SELECT DISTINCT(genres)
+FROM play_store_apps
+
 --Apple has 23 distinct genres
 
-SELECT DISTINCT (genres)
-FROM play_store_apps
-
 --Android has 119.  A lot of these are combinations joined by a ;  Maybe we remove these and only use the first entry per genre?
---Maybe if we only compare genres that are listed in both tables?  
-SELECT DISTINCT genres AS genre, SUM(review_count) as total_reviews
+--Maybe if we only compare genres that are listed in both tables? One potential issue is Apple groups ALL games into 1 category.  Do I need to go through and reclassify every single Android genre category?
+/*"Auto & Vehicles"  ??????
+"Sports" - match
+"Entertainment"- match
+"Simulation;Education"- education
+"Events" ?????
+"Medical"- match
+"Art & Design;Action & Adventure" ??????
+"Simulation;Action & Adventure"- games
+"Communication;Creativity" ????
+"Casual;Brain Games" - games
+"Parenting" ???????
+"Entertainment;Brain Games" games
+"Trivia;Education" - education
+"House & Home" ??????
+"Educational;Education" match
+"Board;Brain Games" games
+"Libraries & Demo" ??????
+"Puzzle;Education" games
+"Lifestyle;Education" education
+"Casual;Education" education
+"Finance" match
+"Entertainment;Action & Adventure" ?????
+"Puzzle;Brain Games" games
+"Adventure" games
+"Video Players & Editors;Music & Video" photo & video 
+"Strategy" games
+"Travel & Local;Action & Adventure" ????
+"Adventure;Education" ?????
+"Arcade;Action & Adventure" games
+"Strategy;Education"
+"Weather" match
+"Books & Reference;Education" ????
+"Travel & Local" ?????
+"Education;Pretend Play" ????
+"Casual;Creativity" games
+"Casual;Pretend Play" games
+"Racing" games
+"Board;Pretend Play" games
+"Lifestyle" match
+"Simulation;Pretend Play" games
+"Word" games
+"Entertainment;Education" ???
+"Action;Action & Adventure" games
+"Casual;Music & Video" ???
+"Music & Audio;Music & Video" ???
+"Strategy;Action & Adventure" games
+"Card;Action & Adventure" games
+"Adventure;Action & Adventure" games
+"Education;Music & Video" ???
+"Productivity" match
+"Role Playing;Action & Adventure" games
+"Puzzle" games
+"Adventure;Brain Games" games
+"Shopping" match
+"Puzzle;Action & Adventure" games
+"Health & Fitness;Action & Adventure" Health & Fitness
+"Music" match
+"Education;Education" match
+"Parenting;Music & Video" ???
+"Entertainment;Pretend Play" ???
+"Casino" games
+"Comics;Creativity" ???
+"Puzzle;Creativity" games
+"Educational;Brain Games" games
+"Educational" education
+"News & Magazines" news
+"Role Playing;Brain Games" games
+"Art & Design;Creativity" ???
+"Educational;Action & Adventure" ????
+"Video Players & Editors" Photo & Video
+"Parenting;Brain Games" games
+"Photography" photo & video 
+"Role Playing;Education" ???
+"Video Players & Editors;Creativity" Photo & video
+"Role Playing" games
+"Art & Design;Pretend Play" ???
+"Music;Music & Video" music
+"Parenting;Education" education
+"Casual" games
+"Education;Creativity" education
+"Arcade;Pretend Play" games
+"Books & Reference" ???
+"Arcade" games
+"Lifestyle;Pretend Play" ???
+"Educational;Creativity" ???
+"Food & Drink" match
+"Role Playing;Pretend Play" games
+"Dating" social networking
+"Strategy;Creativity" ???
+"Books & Reference;Creativity"  ???
+"Health & Fitness;Education" health & fitness
+"Entertainment;Creativity" ????
+"Communication" match
+"Tools;Education" education
+"Card;Brain Games" games 
+"Maps & Navigation" navigation
+"Action" games
+"Card" games
+"Sports;Action & Adventure" sports
+"Art & Design" ???
+"Trivia" games
+"Tools" utilities
+"Entertainment;Music & Video" entertainment
+"Business" business
+"Board;Action & Adventure" games
+"Social" social networking
+"Personalization" ????
+"Education;Action & Adventure" education
+"Racing;Pretend Play" games
+"Educational;Pretend Play" educational
+"Board" games
+"Racing;Action & Adventure" games
+"Health & Fitness" match
+"Comics" book
+"Casual;Action & Adventure" games
+"Simulation" games
+"Education;Brain Games" games
+"Education" match
+"Beauty" ?????*/
+
+--Android Top Apps by review count
+SELECT DISTINCT genres, SUM(review_count) AS total_reviews
 FROM play_store_apps
-WHERE genres IN ('Shopping', 'Games', 'Education', 'Reference', 'Business', 'Social Networking', 'Food & Drink', 'Sports', 'Catalogs', 'Weather', 'Book', 'Music', 'Entertainment', 'Medical', 'Utilities', 'Travel', 'Navigation', 'Photo & Video', 'Finance', 'Health & Fitness', 'News', 'Productivity', 'Lifestyle')
-GROUP BY genre
+WHERE review_count IS NOT NULL
+GROUP BY genres
 ORDER BY total_reviews DESC
 
---Should I use LIKE to pull those out instead?
+
+--Apple Top Apps by review count
+SELECT DISTINCT primary_genre, SUM(CAST(review_count AS bigint)) AS total_reviews
+FROM app_store_apps
+WHERE review_count IS NOT NULL
+GROUP BY primary_genre
+ORDER BY total_reviews DESC
+
 
 SELECT DISTINCT genres AS genre, SUM(review_count) AS total_reviews
 FROM play_store_apps
@@ -84,7 +205,7 @@ OR genres LIKE '%Lifestyle%'
 GROUP BY genre
 ORDER BY total_reviews DESC
 
---That expanded the Android categories to 67 variations on the Apple 13.  Is that even helpful?
+--That expanded the Android categories to 67 variations on the Apple 13, however many of these probably represent duplicates. Is that even helpful?
 
 SELECT DISTINCT primary_genre AS genre, SUM(CAST(review_count AS bigint)) AS review_sum, AVG(CAST(rating AS bigint)) AS avg_rating  
 FROM app_store_apps
@@ -97,7 +218,7 @@ CASE
 	WHEN genres LIKE '%Education%' THEN 'Education'
 	WHEN genres LIKE '%Reference%' THEN 'Reference'
 	WHEN genres LIKE '%Business%' THEN 'Business'
-	WHEN genres LIKE '%Social Networking%' THEN 'Social Networking'
+	WHEN genres LIKE '%Social%' THEN 'Social Networking'
 	WHEN genres LIKE '%Food & Drink%' THEN 'Food & Drink'
 	WHEN genres LIKE '%Sports%' THEN 'Sports'
 	WHEN genres LIKE '%Catalogs%' THEN 'Catalogs'
@@ -123,6 +244,69 @@ FROM play_store_apps
 GROUP BY genre
 ORDER BY review_sum DESC, avg_rating DESC
 
-/*Not sure if this last column even makes sense?
-SUM(CAST(review_count AS bigint))/AVG(CAST(rating AS bigint)) AS avg_reviews_per_rating
+--Issues- duplicate android counts with the case statement?  does review sum even matter? should i pull out the different types of gaming instead, since those won't be in this calculation?? 
+
+/*Not sure if this column would even make sense?
 SUM(CAST(review_count AS bigint))/AVG(CAST(rating AS bigint)) AS avg_reviews_per_rating*/
+
+SELECT DISTINCT name
+FROM app_store_apps
+INTERSECT
+SELECT DISTINCT name
+FROM play_store_apps
+
+SELECT DISTINCT name
+FROM app_store_apps
+UNION ALL
+SELECT DISTINCT name
+FROM play_store_apps
+
+SELECT DISTINCT LOWER(TRIM(name))
+FROM app_store_apps
+UNION
+SELECT DISTINCT LOWER(TRIM(name))
+FROM play_store_apps
+
+
+SELECT * 
+FROM app_store_apps
+LIMIT 3
+
+SELECT * 
+FROM play_store_apps
+LIMIT 3 
+
+SELECT CAST(price AS money)  
+	CASE
+	WHEN price BETWEEN 0 AND 1 THEN '10000'
+	ELSE (price * 10000) END AS price_per_app
+FROM app_store_apps
+UNION
+SELECT CAST(price AS float),  
+	CASE
+	WHEN CAST(price AS float) BETWEEN 0 AND 1 THEN '10000'
+	ELSE ((CAST(price AS float) * 10000)) END AS price_per_app
+FROM play_store_apps
+
+SELECT name, CAST(price AS money)
+FROM play_store_apps
+ORDER BY price DESC
+
+CASE
+	WHEN price BETWEEN 0 AND 1 THEN '10000'
+	ELSE (price * 10000) END AS price_per_app
+
+--Calculating price per app for both tables, adding column for app store
+SELECT DISTINCT name, 'Apple', CAST(price AS numeric), 
+CASE
+	WHEN price BETWEEN 0 AND 1 THEN '10000'
+	ELSE (price * 10000) END AS price_per_app
+FROM app_store_apps
+UNION
+SELECT DISTINCT name, 'Android',
+CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
+CASE
+	WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+	ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app 
+	FROM play_store_apps
+ORDER BY price_per_app DESC, name
