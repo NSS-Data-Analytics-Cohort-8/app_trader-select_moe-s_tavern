@@ -440,20 +440,177 @@ GROUP BY name, price_per_app
 ORDER BY price_per_app DESC
 
 --Finished through C
-SELECT name, price, price_per_app
+SELECT name, price, price_per_app, ROUND(AVG(rating),2)
 FROM 
 	(SELECT DISTINCT name, CAST(price AS numeric), 
 		CASE
 		WHEN price BETWEEN 0 AND 1 THEN '10000'
-		ELSE (price * 10000) END AS price_per_app
+		ELSE (price * 10000) END AS price_per_app, rating
 	FROM app_store_apps
 	INTERSECT
 	SELECT DISTINCT name, 
 	CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
 		CASE
 		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
-		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app 
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app, rating
 	FROM play_store_apps
 	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app, rating
 ORDER BY price_per_app DESC
+
+
+SELECT name, price, price_per_app, ROUND(AVG(rating),2)
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric), 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app, rating
+	FROM app_store_apps
+	INTERSECT
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price_per_app,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app, rating
+	FROM play_store_apps
+	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app, rating
+ORDER BY price_per_app DESC
+
+--Group working on this one...
+SELECT name, price, price_per_app,
+	(SELECT AVG(app_store_apps.rating + play_store_apps.rating)/2 AS avg_rating
+	 FROM app_store_apps
+	FULL JOIN play_store_apps
+	ON app_store_apps.rating=play_store_apps.rating)
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric) AS price, 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app
+	FROM app_store_apps
+	 	INTERSECT
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
+	 	FROM play_store_apps
+	 	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app, avg_rating
+ORDER BY price_per_app ASC
+
+
+SELECT DISTINCT name, CAST(price AS numeric) AS price, 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app,
+		'Apple' AS store
+	FROM app_store_apps
+	 	UNION ALL
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app,
+		'Android' AS store
+	 	FROM play_store_apps
+	 	ORDER BY price_per_app DESC, name
+		
+		
+---Main Query		
+SELECT name, price, price_per_app,
+	(SELECT AVG(app_store_apps.rating + play_store_apps.rating)/2
+				FROM app_store_apps
+				FULL JOIN play_store_apps
+				ON app_store_apps.rating=play_store_apps.rating), (SELECT DISTINCT REPLACE(LOWER(category),'_',' ')
+		FROM play_store_apps
+		UNION
+	SELECT DISTINCT REPLACE(LOWER(primary_genre),'&','and')
+		FROM app_store_apps) AS genre
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric), 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app 
+	 	FROM app_store_apps) AS subquery1
+UNION
+SELECT DISTINCT name, 
+	(CAST(REPLACE(price, '$', '') AS numeric)) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app, content_rating
+FROM play_store_apps
+WHERE name IN 
+	(SELECT name
+	FROM app_store_apps
+	INTERSECT
+	SELECT name
+	FROM play_store_apps)
+
+
+
+
+
+/*GROUP BY name, price, price_per_app, avg_rating
+ORDER BY price_per_app ASC
+
+
+SELECT ROUND(rating * 2, 0) / 2
+FROM play_store_apps
+ORDER BY rating ASC			
+				
+	(SELECT ((ROUND((app_store_apps.rating + play_store_apps.rating)/2)*2,0)/2)	*/	
+	
+--Size	
+SELECT DISTINCT name,price,rating,primary_genre,size_bytes
+FROM app_store_apps
+UNION ALL
+SELECT DISTINCT name,CAST(REPLACE(price, '$', '') AS numeric) AS price,rating,genres,size
+FROM play_store_apps
+WHERE rating IS NOT NULL
+ORDER BY size_bytes
+
+--Genre
+SELECT DISTINCT content_rating
+FROM app_store_apps
+UNION ALL
+SELECT DISTINCT content_rating
+FROM play_store_apps
+
+--Genre refined
+(SELECT DISTINCT REPLACE(LOWER(category),'_',' ')
+FROM play_store_apps
+UNION
+SELECT DISTINCT REPLACE(LOWER(primary_genre),'&','and')
+FROM app_store_apps) AS genre
+
+--Main working query
+SELECT name, price, price_per_app,
+	(SELECT AVG(app_store_apps.rating + play_store_apps.rating) AS avg_rating
+	 FROM app_store_apps
+	FULL JOIN play_store_apps
+	ON app_store_apps.rating=play_store_apps.rating)
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric) AS price, 
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app
+	FROM app_store_apps
+	 	UNION
+	SELECT DISTINCT name, 
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
+	 	FROM play_store_apps
+	 	ORDER BY price_per_app DESC, name) AS subquery
+WHERE name IN 
+	(SELECT name
+	FROM app_store_apps
+	INTERSECT
+	SELECT name
+	FROM play_store_apps)
+GROUP BY name, price, price_per_app, avg_rating
+ORDER BY price_per_app ASC
 
