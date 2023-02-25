@@ -96,10 +96,10 @@ ORDER BY price_per_app DESC;
 --
 --Issue with average, in half points
 
-SELECT DISTINCT name,price,rating,REPLACE(primary_genre,'_',''),size_bytes
+SELECT DISTINCT name,price,rating,REPLACE(primary_genre,'_',''),size_bytes, DISTINCT content_rating,
 FROM app_store
 UNION ALL
-SELECT DISTINCT name,CAST(REPLACE(price, '$', '') AS numeric) AS price,rating,LOWER(category),size
+SELECT DISTINCT name,CAST(REPLACE(price, '$', '') AS numeric) AS price,rating,LOWER(category),size,DISTINCT content_rating
 FROM play_store
 WHERE rating IS NOT NULL
 ORDER BY size_bytes
@@ -107,17 +107,7 @@ ORDER BY size_bytes
 SELECT DISTINCT name, category,genres
 FROM play_store
 
-WITH cte_app AS (
-	SELECT
-		name,price,
-		rating,
-		REPLACE(primary_genre,'_',''),
-		size_bytes,
-		(CASE
-			WHEN avg(rating)>=4 THEN 9
-			ELSE 'short_life_span' END) AS 'longevity'
-		
-		FROM app_store
+
 	
 	--main query
 	SELECT name, price, price_per_app,
@@ -147,3 +137,10 @@ WHERE name IN
 	FROM play_store)
 GROUP BY name, price, price_per_app, avg_rating
 ORDER BY price_per_app ASC
+
+--
+SELECT DISTINCT content_rating
+FROM app_store_apps
+UNION ALL
+SELECT DISTINCT content_rating
+FROM play_store_apps
