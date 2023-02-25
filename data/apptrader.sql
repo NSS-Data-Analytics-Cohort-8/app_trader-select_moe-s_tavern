@@ -333,4 +333,4 @@ SELECT rating,
 	 	WHEN rating <=5 THEN '11'
 	 	END AS longevity
 FROM play_store_apps
-
+-------------------------------------------------------------------------------------------
