@@ -76,7 +76,51 @@ CASE
 ORDER BY price_per_app DESC, name) AS subquery
 
 --
-SELECT name, price, price_per_app,
+SELECT name, price, price_per_app
+FROM 
+	(SELECT DISTINCT name, CAST(price AS numeric) AS price,
+		CASE
+		WHEN price BETWEEN 0 AND 1 THEN '10000'
+		ELSE (price * 10000) END AS price_per_app
+	FROM app_store AS a
+	 	UNION ALL
+	SELECT DISTINCT name,
+	CAST(REPLACE(price, '$', '') AS numeric) AS price,
+		CASE
+		WHEN CAST(REPLACE(price, '$', '') AS numeric) BETWEEN 0 AND 1 THEN '10000'
+		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
+	 	FROM play_store
+	 	ORDER BY price_per_app DESC, name) AS subquery
+GROUP BY name, price, price_per_app
+ORDER BY price_per_app DESC;
+--
+--Issue with average, in half points
+
+SELECT DISTINCT name,price,rating,REPLACE(primary_genre,'_',''),size_bytes
+FROM app_store
+UNION ALL
+SELECT DISTINCT name,CAST(REPLACE(price, '$', '') AS numeric) AS price,rating,LOWER(category),size
+FROM play_store
+WHERE rating IS NOT NULL
+ORDER BY size_bytes
+
+SELECT DISTINCT name, category,genres
+FROM play_store
+
+WITH cte_app AS (
+	SELECT
+		name,price,
+		rating,
+		REPLACE(primary_genre,'_',''),
+		size_bytes,
+		(CASE
+			WHEN avg(rating)>=4 THEN 9
+			ELSE 'short_life_span' END) AS 'longevity'
+		
+		FROM app_store
+	
+	--main query
+	SELECT name, price, price_per_app,
 	(SELECT AVG(app_store.rating + play_store.rating) AS avg_rating
 	 FROM app_store
 	FULL JOIN play_store
@@ -87,7 +131,7 @@ FROM
 		WHEN price BETWEEN 0 AND 1 THEN '10000'
 		ELSE (price * 10000) END AS price_per_app
 	FROM app_store
-	 	INTERSECT
+	 	UNION
 	SELECT DISTINCT name, 
 	CAST(REPLACE(price, '$', '') AS numeric) AS price,
 		CASE
@@ -95,6 +139,11 @@ FROM
 		ELSE (CAST(REPLACE(price, '$', '') AS numeric) * 10000) END AS price_per_app
 	 	FROM play_store
 	 	ORDER BY price_per_app DESC, name) AS subquery
+WHERE name IN 
+	(SELECT name
+	FROM app_store
+	INTERSECT
+	SELECT name
+	FROM play_store)
 GROUP BY name, price, price_per_app, avg_rating
 ORDER BY price_per_app ASC
---
