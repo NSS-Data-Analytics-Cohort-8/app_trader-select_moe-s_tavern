@@ -420,3 +420,6 @@ FROM app_store
 UNION ALL
 SELECT DISTINCT content_rating
 FROM play_store
+	 
+CASE WHEN
+	 content rating='4='THEN
